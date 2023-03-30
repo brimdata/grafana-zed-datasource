@@ -4,18 +4,32 @@
   "name": "Zed",
   "id": "brimdata-zed-datasource",
   "metrics": true,
+  "annotations": true,
+  "logs": true,
   "info": {
     "description": "Zed lake data source",
     "author": {
-      "name": "Brimdata"
+      "name": "Brim Data, Inc.",
+      "url": "https://www.brimdata.io"
     },
     "keywords": ["datasource"],
     "logos": {
-      "small": "img/logo.svg",
-      "large": "img/logo.svg"
+      "small": "img/zed-logo.svg",
+      "large": "img/zed-logo.svg"
     },
-    "links": [],
-    "screenshots": [],
+    "links": [
+      {
+        "name": "Website",
+        "url": "https://github.com/brimdata/grafana-zed-datasource"
+      },
+      {
+        "name": "License",
+        "url": "https://github.com/brimdata/grafana-zed-datasource/blob/main/LICENSE"
+      }
+    ],
+    "screenshots": [
+      {"name": "Query Editor", "path": "img/screenshot-query-editor.png"}
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
