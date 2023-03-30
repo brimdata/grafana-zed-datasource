@@ -33,7 +33,7 @@ it's at http://localhost:9988) change the URL setting appropriately. When
 the lake service's `/version` endpoint. If successful, the version will be shown
 and the plugin is ready for use in dashboard panel queries.
 
-![Configure and Test Zed Data Source](img/config-zed-data-source.png)
+![Configure and Test Zed Data Source](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/config-zed-data-source.png)
 
 ## Best Practices
 
@@ -167,7 +167,7 @@ shown in Grafana.
 PRODUCT_NAME=="Automotive gas oil" | rename this["Automotive gas oil"]:=PRICE
 ```
 
-![Example with one row per metric](img/prices1.png)
+![Example with one row per metric](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/prices1.png)
 
 ### Each measurement (with lot of metrics) in its own row
 
@@ -220,7 +220,7 @@ chart if we let the plugin use its default Zed query (`*`) that pulls all points
 from the pool. The only setting we had to change in our panel configuration was
 to specify the pool name "prices2".
 
-![Example with many metrics per row](img/prices2.png)
+![Example with many metrics per row](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/prices2.png)
 
 If we wanted prettier names in the legend, we could add a Zed query to our
 panel config such as:
@@ -279,7 +279,7 @@ syntactically correct Zed.
 Building on our prior example, here we've defined a multi-value variable called
 "fuels" made up of the six categories of our data.
 
-![Custom variable config](img/custom-variable-config.png)
+![Custom variable config](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/custom-variable-config.png)
 
 Returning to our dashboard, we now can enter a Zed query that uses
 [`cut` operator](https://zed.brimdata.io/docs/language/operators/cut) to
@@ -289,7 +289,7 @@ use of [field dereferencing with indexing](https://zed.brimdata.io/docs/language
 for the field `EURO-SUPER_95` since it can't be referenced as an identifier due
 to its use of the character `-`.
 
-![Custom variable in panel](img/custom-variable-in-panel.png)
+![Custom variable in panel](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/custom-variable-in-panel.png)
 
 ### Aggregations and the `$__interval` variable
 
@@ -348,7 +348,7 @@ count() by ts:=bucket(ts,$__interval),method
 | fuse
 ```
 
-![HTTP method count panel](img/http-method-count.png)
+![HTTP method count panel](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/http-method-count.png)
 
 To see the effect of the `$__interval` variable, click the **Query Inspector**
 button and click **Refresh** on the **Query** tab. Here we can see the full
@@ -358,7 +358,7 @@ replaced with a duration string `1s` that reflects 1-second time buckets.
 If you zoom in/out to change the current time range for the plot and recheck
 the Query Inspector, you'll see this value change.
 
-![Query inspector](img/query-inspector.png)
+![Query inspector](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/query-inspector.png)
 
 To understand what the rest of the Zed is doing, let's look at a sample of
 data from outside Grafana starting with just the aggregation.
@@ -441,13 +441,13 @@ host=="www.google.com"
 | yield {ts, msg: "client " + string(id.orig_h) + " accessed " + host}
 ```
 
-![Configure annotation](img/configure-annotation.png)
+![Configure annotation](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/configure-annotation.png)
 
 When we refresh our dashboard panel and hover the mouse pointer over the red
 marker at the bottom of each dotted vertical line, we can see the custom
 message.
 
-![Hovering over annotation](img/annotation-hover.png)
+![Hovering over annotation](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/annotation-hover.png)
 
 ### Logs
 
@@ -462,7 +462,7 @@ In this example we create a simple logs panel that shows the details of the
 HTTP events for accessing the Google web site that we used as the basis for
 our annotations query.
 
-![Logs panel](img/logs-panel.png)
+![Logs panel](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/logs-panel.png)
 
 ## Debugging
 
@@ -471,7 +471,7 @@ when you hover the mouse pointer over a red triangle in the upper-left corner
 of a panel. The errors you may see here are described in this README and
 should be self-explanatory.
 
-![Hovering over an error message.](img/error-hover.png)
+![Hovering over an error message.](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/error-hover.png)
 
 If you can't make sense of the error message, you may find it helpful to look
 in Grafana's **Query Inspector** as shown [above](#aggregations-and-the-__interval-variable).
