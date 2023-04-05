@@ -51,9 +51,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     }
 
     const wholeQuery =
-      'from ' +
+      'from "' +
       pool +
-      ' | ' +
+      '" | ' +
       timeField +
       ' > ' +
       rangeFrom +
