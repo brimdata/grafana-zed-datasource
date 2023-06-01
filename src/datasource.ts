@@ -196,7 +196,13 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       const zedVersionInfo = await zedClient.version();
       return { status: 'success', message: 'Success - Zed lake version ' + zedVersionInfo.version };
     } catch (err) {
-      return { status: 'error', message: 'Failure - Could not contact Zed lake at ' + this.url };
+      return {
+        status: 'error',
+        message: 'Failure - Could not contact Zed lake at ' + this.url,
+        details: {
+          verboseMessage: String(err)
+        }
+      };
     };
   }
 }
