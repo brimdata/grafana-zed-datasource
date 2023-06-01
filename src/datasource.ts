@@ -10,6 +10,7 @@ import {
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { MyQuery, MyDataSourceOptions } from './types';
 import { lastValueFrom } from 'rxjs';
+import { Client } from '@brimdata/zed-js';
 
 export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   url: string;
@@ -190,18 +191,18 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   }
 
   async testDatasource() {
-    const url = this.url + '/version';
-
     try {
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        return { status: 'success', message: 'Success - Zed lake version ' + data.version };
-      } else {
-        return { status: 'error', message: 'Failure - HTTP status code ' + response.status };
-      }
+      const zedClient = new Client(this.url);
+      const zedVersionInfo = await zedClient.version();
+      return { status: 'success', message: 'Success - Zed lake version ' + zedVersionInfo.version };
     } catch (err) {
-      return { status: 'error', message: 'Failure - Could not contact Zed lake at ' + url };
-    }
+      return {
+        status: 'error',
+        message: 'Failure - Could not contact Zed lake at ' + this.url,
+        details: {
+          verboseMessage: String(err)
+        }
+      };
+    };
   }
 }
