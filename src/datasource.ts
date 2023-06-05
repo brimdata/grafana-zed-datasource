@@ -92,11 +92,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     // In order to tell the difference between these two cases we need to execute
     // the following special query focused on just the Time Field.
     } else if (shapes.length === 0) {
-      const timeCheckQuery = 'from "' +
-        pool +
-        '" | union(typeof(' +
-        timeField +
-        '))';
+      const timeCheckQuery = `from "${pool}" | union(typeof(${timeField}))`;
 
       const timeCheckStream = await zedClient.query(timeCheckQuery);
       await timeCheckStream.promise;
