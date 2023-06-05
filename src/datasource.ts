@@ -96,7 +96,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     // the leftmost one.
     let frameFields: Array<{ name: string; type: FieldType }> = [];
     if (shapes[0] && shapes[0].fields) {
-      shapes[0].fields.map(f => {
+      shapes[0].fields.filter((f) => f.type.kind === "primitive").map(f => {
 
         if (!('name' in f.type)) {
           throw new Error('Fatal error - Query response contains a Zed type with no name (please open an issue at https://github.com/brimdata/grafana-zed-datasource/issues)');
