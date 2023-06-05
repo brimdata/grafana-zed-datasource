@@ -86,7 +86,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       if (timeCheckResult.length === 1 && timeCheckResult[0].length === 1 && timeCheckResult[0][0] === 'time') {
         throw new Error('No data points found to plot in this time range');
       } else {
-        throw new Error('Time Field "' + timeField + '" must be Zed <time> type, but detected type(s): ' + timeCheckResult[0].join(', '))
+        throw new Error('Time Field "' + timeField + '" must be Zed <time> type, but detected type(s): ' + timeCheckResult[0].join(', '));
       }
     }
 
