@@ -42,22 +42,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       }
     }
 
-    const wholeQuery =
-      'from "' +
-      pool +
-      '" | ' +
-      timeField +
-      ' > ' +
-      rangeFrom +
-      ' and ' +
-      timeField +
-      ' < ' +
-      rangeTo +
-      ' | ' +
-      zedQuery +
-      ' | sort ' +
-      timeField;
-
+    const wholeQuery = `from "${pool}" | ${timeField} > ${rangeFrom} and ${timeField} < ${rangeTo} | ${zedQuery} | sort ${timeField}`;
     const finalQuery = getTemplateSrv().replace(wholeQuery, options.scopedVars, 'csv');
     const resultStream = await zedClient.query(finalQuery);
     await resultStream.promise;
