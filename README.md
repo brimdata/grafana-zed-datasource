@@ -5,7 +5,7 @@ for [Grafana](https://grafana.com/) allows the plotting of time-series data
 that's stored in [Zed lakes](https://zed.brimdata.io/docs/commands/zed/).
 
 ---
-  * [Configuration](#configuration)
+  * [Install & Configuration](#install--configuration)
   * [Best Practices](#best-practices)
   * [Example Usage in Dashboards](#example-usage-in-dashboards)
     + [One row per metric](#one-row-per-metric)
@@ -16,20 +16,77 @@ that's stored in [Zed lakes](https://zed.brimdata.io/docs/commands/zed/).
     + [Annotations](#annotations)
     + [Logs](#logs)
   * [Debugging](#debugging)
+  * [Why Unsigned?](#why-unsigned)
   * [Contributing](#contributing)
   * [Join the Community](#join-the-community)
 ---
 
-## Configuration
+## Quick Start
 
-The Zed data source can be added in Grafana via the
-**Configuration > Data Sources** menu. If a lake service is listening locally
-on the default TCP port `9867` (as is typical for the lake launched by the
-[Zui app](https://zui.brimdata.io/) or when
-[`zed serve`](https://zed.brimdata.io/docs/commands/zed#213-serve) is run by hand) the default URL setting can
-be used. If your lake is listening elsewhere (e.g., with [Zui Insiders](https://github.com/brimdata/zui-insiders)
-it's at http://localhost:9988) change the URL setting appropriately. When
-**Save & test** is clicked, the plugin will attempt to return the value from
+Want to see if this plugin is what you're looking for? Watch
+[this quick video](https://www.youtube.com/watch?v=xxxxxxxx)
+to see how easy it is to install the plugin and make your first chart from Zed
+data in Grafana. Then keep reading for best practices to plot your
+sophisticated, real-world data.
+
+For easy cut & paste, here's the command line used in the video to generate
+your own simple test data.
+
+```
+NUM=1; while [ $NUM -le 10 ]; do echo $NUM | /opt/Zui/resources/app.asar.unpacked/zdeps/zq -z 'yield {ts: now(), num:this}' -; sleep 1; NUM=`expr $NUM + 1`; done | tee data.zson
+```
+
+## Install & Configuration
+
+As an example environment, here the plugin is shown being installed on a fresh
+[Grafana installation on Linux](https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/).
+For specifics regarding other platforms or adding a plugin into an existing
+environment, refer to the [Grafana documentation](https://grafana.com/docs/grafana/latest/setup-grafana/installation/).
+
+
+To download and install the latest plugin release, run the following command:
+
+```
+sudo grafana-cli \
+  --pluginUrl https://github.com/brimdata/grafana-zed-datasource/releases/latest/download/brimdata-zed-datasource.zip \
+  plugins install brimdata-zed-datasource
+```
+
+As the plugin is not currently signed ([learn why](#why-unsigned)) an
+additional [configuration change](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#allow_loading_unsigned_plugins)
+is required to allow the Zed plugin to run. Modify the config file
+`/etc/grafana/grafana.ini`, removing the leading semicolon to
+uncomment this line and then edit it to read:
+
+```
+allow_loading_unsigned_plugins = brimdata-zed-datasource
+```
+
+Restart the Grafana service for the modified config to take effect.
+
+```
+sudo systemctl restart grafana-server
+```
+
+To confirm the plugin has loaded successfully, look for a line like the
+following in `/var/log/syslog`.
+
+```
+Jun  7 09:37:16 ubuntu-22 grafana[22412]: logger=plugin.loader t=2023-06-07T09:37:16.885366925-07:00 level=info msg="Plugin registered" pluginID=brimdata-zed-datasource
+```
+
+Once inside Grafana (default: http://localhost:3000), the Zed data source
+can be added by navigating to **Administration > Data Sources > Add data source**,
+then click the entry for Zed (typically at the bottom of the list).
+
+If a Zed lake service is listening locally on the default TCP port `9867`
+(as is typical for the lake launched by the [Zui app](https://zui.brimdata.io/)
+or when [`zed serve`](https://zed.brimdata.io/docs/commands/zed#213-serve) is
+run with default settings) the default URL setting can be used. If your lake
+is listening elsewhere (e.g., with [Zui Insiders](https://github.com/brimdata/zui-insiders)
+it's at http://localhost:9988) change the URL setting as necessary.
+
+When **Save & test** is clicked, the plugin will query the value from
 the lake service's `/version` endpoint. If successful, the version will be shown
 and the plugin is ready for use in dashboard panel queries.
 
@@ -44,23 +101,26 @@ data at moderate scale.
 In its current state, the plugin relies on the use of Zed queries that
 prepare data for easy transformation to the
 [data frames](https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/)
-that Grafana ultimately uses for rendering plots. Some best practices that
-help achieve this:
+that Grafana uses for rendering plots. Some best practices that help achieve this:
 
-1. **The field used as the timestamp for your time-series data should ideally be
-your [pool key](https://zed.brimdata.io/docs/commands/zed#143-pool-key).**
+1. **The Time Field that contains timestamps for your data must be of Zed's
+   `time` type.**
+
+2. **The Time Field should ideally be your
+  [pool key](https://zed.brimdata.io/docs/commands/zed#143-pool-key).**
 
    With this pool configuration, the time range portion of queries initiated
-   via the Grafana dashboard will scan only the minimal number of data
-   objects in the Zed lake relevant to the query.
+   via the Grafana dashboard will scan the minimal number of data objects in
+   the Zed lake relevant to the query.
 
-2. **If possible, use `ts` as the name for your timestamp field.**
+3. **If possible, use `ts` as the name for your Time Field.**
 
    This field name matches the "out of the box" default settings for the plugin.
    However, the plugin can easily be configured to adapt to a different field
    name.
 
-3. **Your time-series data should be of a single [shape](https://zed.brimdata.io/docs/language/overview#10-shaping).**
+4. **Your time-series data should be of a single
+   [shape](https://zed.brimdata.io/docs/language/overview#10-shaping).**
 
    Grafana's columnar data frames need to be constructed with a specific list
    of expected fields. Therefore the count of shapes returned by a query is
@@ -71,13 +131,15 @@ your [pool key](https://zed.brimdata.io/docs/commands/zed#143-pool-key).**
    [`fuse` operator](https://zed.brimdata.io/docs/language/operators/fuse) to
    combine the entire query result into a single, wider shape.
 
-4. **Store data in top-level fields of primitive types.**
+5. **Store data in top-level fields of primitive types.**
 
    Of the fields in a response to a Zed query, the values passed on to Grafana
    by the plugin will be top-level fields of Zed's
    [primitive types](https://zed.brimdata.io/docs/formats/zed#1-primitive-types).
-   If you need to use values from complex types in Grafana, modify your Zed
-   query to make them available as top-level fields, e.g., by using the
+   If you need to use values from
+   [complex Zed types](https://zed.brimdata.io/docs/formats/zed#2-complex-types)
+   in Grafana, modify your Zed query to make them available as top-level fields,
+   e.g., by using the
    [`put` operator](https://zed.brimdata.io/docs/language/operators/put).
 
 Next we'll walk through some real world examples that leverage these best
@@ -93,9 +155,9 @@ time-series data to illustrate the concepts.
 
 ### One row per metric
 
-An example that uses this approach is the
+Some example data that uses this approach is the
 [weekly fuel prices (all data)](https://dgsaie.mise.gov.it/open_data_export.php?export-id=4&export-type=csv)
-link in the [Italian fuel price data](https://dgsaie.mise.gov.it/open-data) that's freely
+link in the [Italian fuel price data](https://dgsaie.mise.gov.it/open-data), which is freely
 available under the [IODL 2.0 license](https://it.wikipedia.org/wiki/Italian_Open_Data_License).
 We'll start by downloading a copy with the English language column headers and
 peek at the data in its original form.
@@ -120,16 +182,14 @@ SURVEY_DATE,PRODUCT_ID,PRODUCT_NAME,PRICE,VAT,EXCISE,NET,CHANGE
 
 Per the approach, we see that the date stamp is repeated for the measurement of
 each of the six different fuel types. Also, being CSV data, this date field
-begins life as a mere string and therefore should be transformed to the Zed
-`time` type as we store it in the lake. This will allow the values
-to be used in time range selections in Grafana that will then be used in the
-generated Zed queries that gather points for plotting.
+begins life as a mere string and therefore must be transformed to the Zed
+`time` type as we store it in the lake.
 
-Taking this into account, we'll perform some preprocessing with [`zq`](https://zed.brimdata.io/docs/commands/zq) to
-prepare the timestamp field and also isolate a subset of the fields, then
-ultimately load the data into a pool in our Zed lake. For convenience, we'll
-use `ts` as the name of the transformed time field since this is the plugin's
-default.
+Taking this into account, we'll perform some preprocessing with
+[`zq`](https://zed.brimdata.io/docs/commands/zq) to prepare the Time
+Field and also isolate a subset of other fields, then ultimately load the data
+into a pool in our Zed lake. For convenience, we'll use `ts` as the name of
+the transformed time field since this is the plugin's default.
 
 ```
 $ zed create prices1
@@ -191,8 +251,8 @@ SURVEY_DATE,EURO-SUPER_95,AUTOMOTIVE_GAS_OIL,LPG,HEATING_GAS_OIL,RESIDUAL_FUEL_O
 
 As we see, there's now a separate column in the CSV file for each category of fuel
 and each row of measurements appears with a single, shared date stamp. We'll
-create a separate pool and once again transform the date stamp to a Zed `time`
-field as we load it into our lake.
+create another pool and once again transform the date stamp to a field of Zed's
+`time` type as we load it into our lake.
 
 ```
 $ zed create prices2
@@ -217,8 +277,9 @@ $ zed query -Z 'from prices2 | head 1'
 
 Because Grafana defaults to plotting all numeric fields, all six appear on our
 chart if we let the plugin use its default Zed query (`*`) that pulls all points
-from the pool. The only setting we had to change in our panel configuration was
-to specify the pool name "prices2".
+from the pool that are in the dashboard's current selected time range. The only
+change from defaults we had to make when configuring our new panel was specifying
+the pool name "prices2".
 
 ![Example with many metrics per row](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/prices2.png)
 
@@ -237,9 +298,9 @@ rename this["Euro-Super 95"] := this["EURO-SUPER_95"],
 
 Now that we've seen the second approach makes it easier to plot, if you find
 yourself with data that's already stored using the first approach, you could use
-Zed like what's shown below to transform to the second approach. This idiom could
-be used to preprocess the data before loading it into yet another pool or you
-could use it as part of a Zed query in your Grafana panel config.
+a Zed query like what's shown below to transform to the second approach. This
+idiom could be used to preprocess the data before loading it into yet another
+pool, or you could use it as part of a Zed query in your Grafana panel config.
 
 ```
 $ zed query -Z 'from prices1
@@ -281,13 +342,13 @@ Building on our prior example, here we've defined a multi-value variable called
 
 ![Custom variable config](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/custom-variable-config.png)
 
-Returning to our dashboard, we now can enter a Zed query that uses
+Returning to our dashboard, we now can enter a Zed query that uses the
 [`cut` operator](https://zed.brimdata.io/docs/language/operators/cut) to
-isolate only the timestamp field and variable reference that expands into a
+isolate only the Time Field and a variable reference that expands to a
 comma-separated field list required by `cut`. Notice that we once again made
 use of [field dereferencing with indexing](https://zed.brimdata.io/docs/language/overview#75-field-dereference)
 for the field `EURO-SUPER_95` since it can't be referenced as an identifier due
-to its use of the character `-`.
+to its name containing the character `-`.
 
 ![Custom variable in panel](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/custom-variable-in-panel.png)
 
@@ -320,7 +381,7 @@ Grafana based on the current plot width and slides easily into the `span`
 parameter of Zed's [`bucket()` function](https://zed.brimdata.io/docs/language/functions/bucket).
 
 We'll once again start by creating a pool and loading our raw test data. Since
-this data already has a `time`-typed field called `ts`, we don't need to
+this data already has a `time`-typed Time Field called `ts`, we don't need to
 perform the same preprocessing of the timestamp we did previously.
 
 ```
@@ -350,31 +411,33 @@ count() by ts:=bucket(ts,$__interval),method
 
 ![HTTP method count panel](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/http-method-count.png)
 
-To see the effect of the `$__interval` variable, click the **Query Inspector**
-button and click **Refresh** on the **Query** tab. Here we can see the full
-query assembled by the plugin that was sent to the Zed lake API based on the
-current panel settings. We can see that the `$__interval` variable was
-replaced with a duration string `1s` that reflects 1-second time buckets.
-If you zoom in/out to change the current time range for the plot and recheck
-the Query Inspector, you'll see this value change.
+To see the effect of the `$__interval` variable, open the Network tab of your
+browser's Developer Tools and click the most recent request issued against the Zed
+lake API's `query` endpoint. Here we can see the final query assembled by the
+plugin based on the current panel settings. We can see that the `$__interval`
+variable was replaced with a duration string `2s` that reflects 2-second time
+buckets. If you zoom in/out to change the current time range for the plot and
+check again, you'll see this value change.
 
-![Query inspector](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/query-inspector.png)
+![DevTools Network Tab](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/devtools-network-tab.png)
 
 To understand what the rest of the Zed is doing, let's look at a sample of
 data from outside Grafana starting with just the aggregation.
 
 ```
 $ zed query -z 'from http
-                | count() by ts:=bucket(ts,1s),method
+                | count() by ts:=bucket(ts,2s),method
                 | sort ts'
 
-{ts:2018-03-24T17:15:20Z,method:"GET",count:63(uint64)}
 {ts:2018-03-24T17:15:20Z,method:"POST",count:1(uint64)}
-{ts:2018-03-24T17:15:20Z,method:"PUT",count:1(uint64)}
 {ts:2018-03-24T17:15:20Z,method:"OPTIONS",count:1(uint64)}
-{ts:2018-03-24T17:15:21Z,method:"HEAD",count:1(uint64)}
-{ts:2018-03-24T17:15:21Z,method:"GET",count:35(uint64)}
-{ts:2018-03-24T17:15:21Z,method:"PRI",count:1(uint64)}
+{ts:2018-03-24T17:15:20Z,method:"HEAD",count:1(uint64)}
+{ts:2018-03-24T17:15:20Z,method:"PRI",count:1(uint64)}
+{ts:2018-03-24T17:15:20Z,method:"PUT",count:1(uint64)}
+{ts:2018-03-24T17:15:20Z,method:"GET",count:98(uint64)}
+{ts:2018-03-24T17:15:22Z,method:null(string),count:1(uint64)}
+{ts:2018-03-24T17:15:22Z,method:"POST",count:3(uint64)}
+{ts:2018-03-24T17:15:22Z,method:"GET",count:84(uint64)}
 ...
 ```
 
@@ -466,7 +529,7 @@ our annotations query.
 
 ## Debugging
 
-When things are going wrong, the first thing to check is for an alert shown
+When you hit problems, the first thing to check is for an alert shown
 when you hover the mouse pointer over a red triangle in the upper-left corner
 of a panel. The errors you may see here are described in this README and
 should be self-explanatory.
@@ -474,24 +537,59 @@ should be self-explanatory.
 ![Hovering over an error message.](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/error-hover.png)
 
 If you can't make sense of the error message, you may find it helpful to look
-in Grafana's **Query Inspector** as shown [above](#aggregations-and-the-__interval-variable).
-The assembled query shown can then be executed outside of Grafana using
-`zed query` or in the Zui app to narrow down if it's a problem with how
-the query is constructed or if it's a bug/limitation in the plugin or Grafana.
+in the Network tab of your browser's Developer Tools as shown
+[above](#aggregations-and-the-__interval-variable). The assembled query shown
+can then be executed outside of Grafana using `zed query` or in the Zui app to
+narrow down if it's a problem with how the query is constructed or if it's a
+bug/limitation in the plugin or Grafana.
 
 If you're still stuck, come talk to us on the `#grafana` channel on the
 [Brim Data community Slack](https://www.brimdata.io/join-slack/) or
 [open an issue](https://github.com/brimdata/grafana-zed-datasource/issues).
+
+## Why Unsigned?
+
+Ideally we'd prefer to have the Zed plugin available in the
+[public data source plugin directory](https://grafana.com/grafana/plugins/?type=datasource)
+to make it easier to find and install. This is predicated on the plugin being
+[signed](https://grafana.com/docs/grafana/latest/developers/plugins/sign-a-plugin/).
+An initial release of the plugin was indeed submitted to the Grafana maintainers
+with the belief it met the criteria for the "community"
+[plugin signature level](https://grafana.com/docs/grafana/latest/developers/plugins/sign-a-plugin/#plugin-signature-levels)
+since, per that page, the dependent [Zed](https://zed.brimdata.io/) technology 
+is offered to the community free of charge as open source and will continue to be
+indefinitely. However, after initial review of our submission we were pointed
+at [more extensive legal terms](https://grafana.com/legal/plugins/)
+which explain that to qualify for the community signature level the plugin must
+be "not affiliated with any commercial endeavor". As the corporate sponsor of
+the Zed project, [Brim Data](https://www.brimdata.io/) is currently a seed stage startup, and the company
+does hope to one day operate a viable business such as by offering paid services and
+support to users that may want it. Apparently this fact alone is enough to
+disqualify the plugin from eligibility at the "community" level. Furthermore, the
+constraints of being a seed stage startup mean Brim Data cannot currently
+justify the expense of paying the quoted price to be signed at Grafana's
+"commercial" signature level. While this is disappointing, we respect Grafana's
+decision to run their programs as they wish. We are hopeful that they will
+one day change their policies to benefit our combined user base. In the
+meantime, we hope that users may benefit from using the Zed plugin even in
+its atypical "unsigned" state.
+
+If you have additional questions or concerns about running "unsigned", or if
+you feel strongly about the plugin being "signed" and have thoughts on how
+to move past the known barriers, please come talk to us in the `#grafana`
+channel on the [Brim Data community Slack](https://www.brimdata.io/join-slack/).
 
 ## Contributing
 
 Contributions are welcomed! Per common practice, please
 [open an issue](https://github.com/brimdata/grafana-zed-datasource/issues)
 before sending a pull request.  If you think your ideas might benefit from
-some refinement via Q&A, come talk to us on the
+some refinement via Q&A, come talk to us on the `#grafana` channel on the
 [Brim Data community Slack](https://www.brimdata.io/join-slack/).
 
 ## Join the Community
 
 Join the [Brim Data community Slack](https://www.brimdata.io/join-slack/) workspace for
-announcements, Q&A, and to trade tips!
+announcements, Q&A, and to trade tips. There's a `#grafana` channel where you
+can ask questions and get help with this plugin, a `#zed` channel for Q&A about the
+Zed language & lake, and more!
