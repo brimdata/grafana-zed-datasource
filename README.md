@@ -23,12 +23,18 @@ that's stored in [Zed lakes](https://zed.brimdata.io/docs/commands/zed/).
 
 ## Quick Start
 
-Want to see if this plugin is what you're looking for? Watch this quick video
-to see how easy it is to install and make your first chart from Zed data in
-Grafana. Then keep reading for best practices to plot your sophisticated,
-real-world data.
+Want to see if this plugin is what you're looking for? Watch
+[this quick video](https://www.youtube.com/watch?v=xxxxxxxx)
+to see how easy it is to install the plugin and make your first chart from Zed
+data in Grafana. Then keep reading for best practices to plot your
+sophisticated, real-world data.
 
-[YouTube link]
+For easy cut & paste, here's the command line used in the video to generate
+your own simple test data.
+
+```
+NUM=1; while [ $NUM -le 10 ]; do echo $NUM | /opt/Zui/resources/app.asar.unpacked/zdeps/zq -z 'yield {ts: now(), num:this}' -; sleep 1; NUM=`expr $NUM + 1`; done | tee data.zson
+```
 
 ## Install & Configuration
 
@@ -69,16 +75,16 @@ following in `/var/log/syslog`.
 Jun  7 09:37:16 ubuntu-22 grafana[22412]: logger=plugin.loader t=2023-06-07T09:37:16.885366925-07:00 level=info msg="Plugin registered" pluginID=brimdata-zed-datasource
 ```
 
-Once inside Grafana (defaults to http://localhost:3000), the Zed data source
+Once inside Grafana (default: http://localhost:3000), the Zed data source
 can be added by navigating to **Administration > Data Sources > Add data source**,
-then clicking the entry for Zed (typically at the bottom of the list).
+then click the entry for Zed (typically at the bottom of the list).
 
 If a Zed lake service is listening locally on the default TCP port `9867`
 (as is typical for the lake launched by the [Zui app](https://zui.brimdata.io/)
 or when [`zed serve`](https://zed.brimdata.io/docs/commands/zed#213-serve) is
-run by hand with default settings) the default URL setting can be used. If your
-lake is listening elsewhere (e.g., with [Zui Insiders](https://github.com/brimdata/zui-insiders)
-it's at http://localhost:9988) change the URL setting appropriately.
+run with default settings) the default URL setting can be used. If your lake
+is listening elsewhere (e.g., with [Zui Insiders](https://github.com/brimdata/zui-insiders)
+it's at http://localhost:9988) change the URL setting as necessary.
 
 When **Save & test** is clicked, the plugin will query the value from
 the lake service's `/version` endpoint. If successful, the version will be shown
@@ -130,8 +136,10 @@ that Grafana uses for rendering plots. Some best practices that help achieve thi
    Of the fields in a response to a Zed query, the values passed on to Grafana
    by the plugin will be top-level fields of Zed's
    [primitive types](https://zed.brimdata.io/docs/formats/zed#1-primitive-types).
-   If you need to use values from complex types in Grafana, modify your Zed
-   query to make them available as top-level fields, e.g., by using the
+   If you need to use values from
+   [complex Zed types](https://zed.brimdata.io/docs/formats/zed#2-complex-types)
+   in Grafana, modify your Zed query to make them available as top-level fields,
+   e.g., by using the
    [`put` operator](https://zed.brimdata.io/docs/language/operators/put).
 
 Next we'll walk through some real world examples that leverage these best
@@ -404,12 +412,12 @@ count() by ts:=bucket(ts,$__interval),method
 ![HTTP method count panel](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/http-method-count.png)
 
 To see the effect of the `$__interval` variable, open the Network tab of your
-browser's Developer Tools and click the most recent request against the Zed
+browser's Developer Tools and click the most recent request issued against the Zed
 lake API's `query` endpoint. Here we can see the final query assembled by the
-plugin that was sent to the Zed lake API based on the current panel settings.
-We can see that the `$__interval` variable was replaced with a duration string
-`2s` that reflects 2-second time buckets. If you zoom in/out to change the
-current time range for the plot and check again, you'll see this value change.
+plugin based on the current panel settings. We can see that the `$__interval`
+variable was replaced with a duration string `2s` that reflects 2-second time
+buckets. If you zoom in/out to change the current time range for the plot and
+check again, you'll see this value change.
 
 ![DevTools Network Tab](https://github.com/brimdata/grafana-zed-datasource/raw/main/src/img/devtools-network-tab.png)
 
@@ -418,16 +426,18 @@ data from outside Grafana starting with just the aggregation.
 
 ```
 $ zed query -z 'from http
-                | count() by ts:=bucket(ts,1s),method
+                | count() by ts:=bucket(ts,2s),method
                 | sort ts'
 
-{ts:2018-03-24T17:15:20Z,method:"GET",count:63(uint64)}
 {ts:2018-03-24T17:15:20Z,method:"POST",count:1(uint64)}
-{ts:2018-03-24T17:15:20Z,method:"PUT",count:1(uint64)}
 {ts:2018-03-24T17:15:20Z,method:"OPTIONS",count:1(uint64)}
-{ts:2018-03-24T17:15:21Z,method:"HEAD",count:1(uint64)}
-{ts:2018-03-24T17:15:21Z,method:"GET",count:35(uint64)}
-{ts:2018-03-24T17:15:21Z,method:"PRI",count:1(uint64)}
+{ts:2018-03-24T17:15:20Z,method:"HEAD",count:1(uint64)}
+{ts:2018-03-24T17:15:20Z,method:"PRI",count:1(uint64)}
+{ts:2018-03-24T17:15:20Z,method:"PUT",count:1(uint64)}
+{ts:2018-03-24T17:15:20Z,method:"GET",count:98(uint64)}
+{ts:2018-03-24T17:15:22Z,method:null(string),count:1(uint64)}
+{ts:2018-03-24T17:15:22Z,method:"POST",count:3(uint64)}
+{ts:2018-03-24T17:15:22Z,method:"GET",count:84(uint64)}
 ...
 ```
 
