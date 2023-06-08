@@ -5,6 +5,7 @@ for [Grafana](https://grafana.com/) allows the plotting of time-series data
 that's stored in [Zed lakes](https://zed.brimdata.io/docs/commands/zed/).
 
 ---
+  * [Quick Start](#quick-start)
   * [Install & Configuration](#install--configuration)
   * [Best Practices](#best-practices)
   * [Example Usage in Dashboards](#example-usage-in-dashboards)
