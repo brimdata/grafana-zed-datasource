@@ -24,7 +24,7 @@ that's stored in [Zed lakes](https://zed.brimdata.io/docs/commands/zed/).
 ## Quick Start
 
 Want to see if this plugin is what you're looking for? Watch
-[this quick video](https://www.youtube.com/watch?v=xxxxxxxx)
+[this quick video](https://www.youtube.com/watch?v=udoXknIEtr4)
 to see how easy it is to install the plugin and make your first chart from Zed
 data in Grafana. Then keep reading for best practices to plot your
 sophisticated, real-world data.
