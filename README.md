@@ -197,7 +197,7 @@ $ zed create prices1
 pool created: prices1 2KkHUfmYz7FDdix6WRf7XEjkRfO
 
 $ zq 'cut ts:=time(SURVEY_DATE),PRODUCT_NAME,PRICE' all_prices.csv \
-  | zed -use prices1 load -
+  | zed load -use prices1 -
 (2/1) 75.95KB 75.95KB/s
 2KkHZEIfCdlCQJcgO9TAGT8cNpz committed
 ```
@@ -260,7 +260,7 @@ $ zed create prices2
 pool created: prices2 2KkJGc9sgl2T7eq5rB0WSff26IV
 
 $ zq 'rename ts:=SURVEY_DATE | ts:=time(ts)' prices2.csv \
-  | zed -use prices2 load -
+  | zed load -use prices2 -
 (2/1) 30.29KB 30.29KB/s
 2Kbf3eLGvItvbxLA2TMQyaCab2W committed
 
@@ -390,7 +390,7 @@ $ zed create http
 pool created: http 2KkaG0Ms5mNM68kwXYbSj8tRciG
 
 $ zq "get https://github.com/brimdata/zed-sample-data/blob/main/zeek-default/http.log.gz?raw=true" \
-  | zed -use http load -
+  | zed load -use http -
 (1/1) 8.30MB 8.30MB/s
 2KbzmcybYySkykAkYxTdYsNbL5o committed
 ```
